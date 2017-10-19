@@ -45,8 +45,12 @@ concat_p([[]|T], R) -> concat_p(T, R);
 concat_p([H|T], R) -> concat_p(T, [H|R]);
 concat_p([], R) -> R.
 
-flatten_test() -> [1, 2, 3, 4, 5] = flatten([[1, [2, [3], []], [[[4]]], [5, 6]]]).
-flatten(L) -> concat(L).
+flatten_test() -> [1, 2, 3, 4, 5, 6] = flatten([[1, [2, [3], []], [[[4]]], [5, 6]]]).
+flatten(L) -> flatten_p(L, []).
+flatten_p([[H|T]], R) -> flatten_p([H|T], R);
+flatten_p([[]|T], R) -> flatten_p(T, R);
+flatten_p([H|T], R) -> flatten_p(concat(T), [H|R]);
+flatten_p([], R) -> reverse(R).
 
 rdna_test() -> "UUACCGAA" = rdna("AATGGCTT").
 rdna(DNA) -> rdna_p(DNA, []).
