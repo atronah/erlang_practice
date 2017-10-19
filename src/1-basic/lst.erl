@@ -44,3 +44,15 @@ concat_p([[HS|TS]|T], R) -> concat_p(concat_p(reverse([HS|TS]),T), R);
 concat_p([H|T], R) -> concat_p(T, [H|R]);
 concat_p([], R) -> R.
 
+flatten_test() -> [1, 2, 3, 4, 5] = flatten([[1, [2, [3], []], [[[4]]], [5, 6]]]).
+flatten(L) -> concat(L).
+
+rdna_test() -> "UUACCGAA" = rdna("AATGGCTT").
+rdna(DNA) -> rdna_p(DNA, []).
+rdna_p([H|T], R) -> rdna_p(T, [nucl_compl(H)|R]);
+rdna_p([], R) -> reverse(R).
+nucl_compl('G') -> 'C'; nucl_compl(g) -> c;
+nucl_compl('C') -> 'G'; nucl_compl(c) -> g;
+nucl_compl('T') -> 'A'; nucl_compl(t) -> a;
+nucl_compl('A') -> 'U'; nucl_compl(a) -> u.
+
