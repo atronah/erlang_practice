@@ -41,6 +41,7 @@ reverse_p([H|T], R) -> reverse_p(T, [H|R]).
 concat_test() -> [1, 2, 3, 4, 5, 6, ok, 7, 8, 9] = concat([[1, 2], [3, 4, 5, 6], ok, [7, 8, 9]]).
 concat(L) -> reverse(concat_p(L, [])).
 concat_p([[HS|TS]|T], R) -> concat_p(concat_p(reverse([HS|TS]),T), R); 
+concat_p([[]|T], R) -> concat_p(T, R);
 concat_p([H|T], R) -> concat_p(T, [H|R]);
 concat_p([], R) -> R.
 
