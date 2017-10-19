@@ -9,10 +9,12 @@
         , concat/1
         ]).
 
+create_test() -> [1, 2, 3, 4, 5] = create(5).
 create(N) -> create_p(N, []).
 create_p(0, L) -> L;
 create_p(N, L) -> create_p(N-1, [N|L]).
         
+create_backward_test() -> [4, 3, 2, 1] = create_backward(4).
 create_backward(N) -> create_backward_p(N, []).
 create_backward_p(0, L) -> L;
 create_backward_p(N, L) -> create_backward_p(N-1, L ++ [N]).
@@ -28,8 +30,10 @@ print_range_odd(N) when N rem 2 =/= 0 ->
     io:format("~p~n", [N]);
 print_range_odd(N) -> print_range_odd(N-1).
 
+filter_test() -> [1, 2, 3] = filter([1, 2, 3, 4, 5], 3).
 filter(L, M) -> [X || X <- L, X =< M].
 
+reverse_test() -> [3, 2, 1] = reverse([1, 2, 3]).
 reverse(L) -> reverse_p(L, []).
 reverse_p([], R) -> R;
 reverse_p([H|T], R) -> reverse_p(T, [H|R]).
@@ -39,3 +43,4 @@ concat(L) -> reverse(concat_p(L, [])).
 concat_p([[HS|TS]|T], R) -> concat_p(concat_p(reverse([HS|TS]),T), R); 
 concat_p([H|T], R) -> concat_p(T, [H|R]);
 concat_p([], R) -> R.
+
