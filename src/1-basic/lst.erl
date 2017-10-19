@@ -52,12 +52,17 @@ flatten_p([[]|T], R) -> flatten_p(T, R);
 flatten_p([H|T], R) -> flatten_p(concat(T), [H|R]);
 flatten_p([], R) -> reverse(R).
 
-rdna_test() -> "UUACCGAA" = rdna("AATGGCTT").
+rdna_test() -> [u, u, a, c, c, g, a, a] = rdna("AATGGCTT").
 rdna(DNA) -> rdna_p(DNA, []).
-rdna_p([H|T], R) -> rdna_p(T, [nucl_compl(H)|R]);
+rdna_p([H|T], R) -> rdna_p(T, [nucl_compliment(nucl_atom(H))|R]);
 rdna_p([], R) -> reverse(R).
-nucl_compl('G') -> 'C'; nucl_compl(g) -> c;
-nucl_compl('C') -> 'G'; nucl_compl(c) -> g;
-nucl_compl('T') -> 'A'; nucl_compl(t) -> a;
-nucl_compl('A') -> 'U'; nucl_compl(a) -> u.
+nucl_atom($G) -> g; 
+nucl_atom($C) -> c; 
+nucl_atom($T) -> t;
+nucl_atom($A) -> a;
+nucl_atom(N) -> N.
+nucl_compliment(c) -> g;
+nucl_compliment(g) -> c;
+nucl_compliment(t) -> a;
+nucl_compliment(a) -> u.
 
