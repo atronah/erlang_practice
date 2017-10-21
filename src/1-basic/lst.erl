@@ -88,3 +88,20 @@ nucl_compliment(c) -> g;
 nucl_compliment(g) -> c;
 nucl_compliment(t) -> a;
 nucl_compliment(a) -> u.
+
+%% @doc cut all substitutions of `Sub` sequence in `RDNA`
+cut_rdna(RDNA, Sub) -> cut_rdna_p(RDNA, Sub, [], []).
+cut_rdna_p([], _Sub, Buffer, Result) -> reverse(concat([Buffer, Result]));
+cut_rdna_p(RDNA, [], [BufferHead|BufferTail], Result) -> 
+	cut_rdna_p(RDNA, reverse([BufferHead|BufferTail]), [], Result);
+cut_rdna_p([RDNAHead|RDNATail], [SubHead|SubTail], Buffer, Result) 
+  when RDNAHead =/= SubHead ->
+	cut_rdna_p(RDNATail, 
+		   concat([reverse(Buffer), [SubHead|SubTail]]), 
+		   [], 
+		   [RDNAHead|concat([Buffer, Result])]);
+cut_rdna_p([RDNAHead|RDNATail], [SubHead|SubTail], Buffer, Result) 
+  when RDNAHead == SubHead ->
+	cut_rdna_p(RDNATail, SubTail, [SubHead|Buffer], Result).
+cut_rdna_small_test() -> [t] = cut_rdna([t, a, g], [a, g]).
+cut_rdna_test() -> [c,g,t,a,g,t] = cut_rdna([c,g,g,t,c,t,a,g,t,g,t,c], [g,t,c]).		
