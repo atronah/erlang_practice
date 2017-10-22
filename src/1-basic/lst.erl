@@ -8,7 +8,7 @@
         , reverse/1
         , concat/1
         , flatten/1
-        , rdna/1
+	, dna_to_rna/1
         ]).
 
 %% @doc makes list with numbers from `1` to `N` (inckuding).
@@ -62,13 +62,13 @@ flatten_p([Head|Tail], Result) -> flatten_p(concat(Tail), [Head|Result]);
 flatten_p([], Result) -> reverse(Result).
 flatten_test() -> [1, 2, 3, 4, 5, 6] = flatten([[1, [2, [3], []], [[[4]]], [5, 6]]]).
 
-%% @doc transforms DNA to RDNA
+%% @doc transforms DNA to RNA
 %% @param DNA sequence of nucleatides, represented either as a list of atoms (`[a, Tail, g, c]`) or as a uppercase string (`ATGC`)
 %% @returns sequence of nucleatides complimentary to `DNA` nucleatides and represented as a list of atoms (`[a, u, g, c]`)
-rdna(DNA) -> rdna_p(nucl_string_to_atoms(DNA), []).
-rdna_p([Head|Tail], Result) -> rdna_p(Tail, [nucl_compliment(Head)|Result]);
-rdna_p([], Result) -> reverse(Result).
-rdna_test() -> [u, u, a, c, c, g, a, a] = rdna("AATGGCTT").
+dna_to_rna(DNA) -> dna_to_rna_p(nucl_string_to_atoms(DNA), []).
+dna_to_rna_p([Head|Tail], Result) -> dna_to_rna_p(Tail, [nucl_compliment(Head)|Result]);
+dna_to_rna_p([], Result) -> reverse(Result).
+dna_to_rna_test() -> [u, u, a, c, c, g, a, a] = dna_to_rna("AATGGCTT").
 
 %% @doc tranform letter representaion of nucleatide to atom representation
 nucl_atom($G) -> g; 
