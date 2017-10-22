@@ -85,7 +85,7 @@ nucl_string_to_atoms_p([], Result) -> reverse(Result);
 nucl_string_to_atoms_p([Head|Tail], Result) -> 
 	nucl_string_to_atoms_p(Tail, [nucl_atom(Head)|Result]).
 
-%% @doc transform DNA nucleatide to complimentary RDNA nucleatide
+%% @doc transform DNA nucleatide to complimentary RNA nucleatide
 nucl_compliment(c) -> g;
 nucl_compliment(g) -> c;
 nucl_compliment(t) -> a;
