@@ -9,6 +9,7 @@
         , concat/1
         , flatten/1
 	, dna_to_rna/1
+	, cut_rdna/2
         ]).
 
 %% @doc makes list with numbers from `1` to `N` (inckuding).
@@ -90,18 +91,26 @@ nucl_compliment(t) -> a;
 nucl_compliment(a) -> u.
 
 %% @doc cut all substitutions of `Sub` sequence in `RDNA`
-cut_rdna(RDNA, Sub) -> cut_rdna_p(RDNA, Sub, [], []).
-cut_rdna_p([], _Sub, Buffer, Result) -> reverse(concat([Buffer, Result]));
+cut_rdna(RDNA, Sub) -> 
+	cut_rdna_p(nucl_string_to_atoms(RDNA), 
+		   nucl_string_to_atoms(Sub), 
+		   [], 
+		   []).
 cut_rdna_p(RDNA, [], [BufferHead|BufferTail], Result) -> 
 	cut_rdna_p(RDNA, reverse([BufferHead|BufferTail]), [], Result);
+cut_rdna_p([], _Sub, Buffer, Result) -> reverse(concat([Buffer, Result]));
+cut_rdna_p([RDNAHead|RDNATail], [SubHead|SubTail], [], Result) 
+  when RDNAHead =/= SubHead ->
+	cut_rdna_p(RDNATail, [SubHead|SubTail], [], [RDNAHead|Result]);
 cut_rdna_p([RDNAHead|RDNATail], [SubHead|SubTail], Buffer, Result) 
   when RDNAHead =/= SubHead ->
-	cut_rdna_p(RDNATail, 
+	cut_rdna_p([RDNAHead|RDNATail], 
 		   concat([reverse(Buffer), [SubHead|SubTail]]), 
 		   [], 
-		   [RDNAHead|concat([Buffer, Result])]);
+		   concat([Buffer, Result]));
 cut_rdna_p([RDNAHead|RDNATail], [SubHead|SubTail], Buffer, Result) 
   when RDNAHead == SubHead ->
 	cut_rdna_p(RDNATail, SubTail, [SubHead|Buffer], Result).
-cut_rdna_small_test() -> [t] = cut_rdna([t, a, g], [a, g]).
-cut_rdna_test() -> [c,g,t,a,g,t] = cut_rdna([c,g,g,t,c,t,a,g,t,g,t,c], [g,t,c]).		
+cut_rdna_test() -> [c, g, t, a, g, t] = cut_rdna([c, g, g, t, c, t, a, g, t, g, t, c],
+						 [g, t, c]).		
+cut_rdna_string_test() -> [a, t, t] = cut_rdna("AAGGTT", "AGG").
