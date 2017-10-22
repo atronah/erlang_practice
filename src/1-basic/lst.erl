@@ -76,6 +76,7 @@ nucl_atom($G) -> g;
 nucl_atom($C) -> c; 
 nucl_atom($T) -> t;
 nucl_atom($A) -> a;
+nucl_atom($U) -> u;
 nucl_atom(Other) -> Other.
 
 %% @doc transaform string represenation of nucleatides to list of atoms
