@@ -65,8 +65,8 @@ flatten_test() -> [1, 2, 3, 4, 5, 6] = flatten([[1, [2, [3], []], [[[4]]], [5, 6
 %% @doc transforms DNA to RDNA
 %% @param DNA sequence of nucleatides, represented either as a list of atoms (`[a, Tail, g, c]`) or as a uppercase string (`ATGC`)
 %% @returns sequence of nucleatides complimentary to `DNA` nucleatides and represented as a list of atoms (`[a, u, g, c]`)
-rdna(DNA) -> rdna_p(DNA, []).
-rdna_p([Head|Tail], Result) -> rdna_p(Tail, [nucl_compliment(nucl_atom(Head))|Result]);
+rdna(DNA) -> rdna_p(nucl_string_to_atoms(DNA), []).
+rdna_p([Head|Tail], Result) -> rdna_p(Tail, [nucl_compliment(Head)|Result]);
 rdna_p([], Result) -> reverse(Result).
 rdna_test() -> [u, u, a, c, c, g, a, a] = rdna("AATGGCTT").
 
@@ -76,6 +76,12 @@ nucl_atom($C) -> c;
 nucl_atom($T) -> t;
 nucl_atom($A) -> a;
 nucl_atom(Other) -> Other.
+
+%% @doc transaform string represenation of nucleatides to list of atoms
+nucl_string_to_atoms(String) -> nucl_string_to_atoms_p(String, []).
+nucl_string_to_atoms_p([], Result) -> reverse(Result);
+nucl_string_to_atoms_p([Head|Tail], Result) -> 
+	nucl_string_to_atoms_p(Tail, [nucl_atom(Head)|Result]).
 
 %% @doc transform DNA nucleatide to complimentary RDNA nucleatide
 nucl_compliment(c) -> g;
