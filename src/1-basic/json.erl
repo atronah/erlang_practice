@@ -58,6 +58,7 @@ is_BasicValue(Value) -> is_string(Value)
                         orelse is_boolean(Value)
                         orelse is_integer(Value)
                         orelse is_float(Value).
+is_BasicValue_test() -> true = is_BasicValue(false).
 
 %% @doc checks that passed argument matches the specification `{Key, ValueSpec}` 
 is_Key_ValueSpec_Pair({Key, ValueSpec}) -> is_Key(Key) andalso is_ValueSpec(ValueSpec);
@@ -70,3 +71,11 @@ is_ValueSpec(Value) -> is_BasicValue(Value) orelse is_Key_ValueSpec_Pair(Value).
 is_ValueSpec_list([Head|Tail], Checker) -> Checker(Head) andalso is_ValueSpec_list(Tail, Checker);
 is_ValueSpec_list([], _Checker) -> true;
 is_ValueSpec_list(_Other, _Checker) -> false.
+is_ValueSpec_string_test() -> true = is_ValueSpec("test").
+is_ValueSpec_boolean_test() -> true = is_ValueSpec(false).
+is_ValueSpec_integer_test() -> true = is_ValueSpec(2).
+is_ValueSpec_float_test() -> true = is_ValueSpec("9.9").
+is_ValueSpec_BasicValue_list_test() -> true = is_ValueSpec([2, true, 4.2, "text"]).
+is_ValueSpec_KeyVal_test() -> true = is_ValueSpec({"text_key", 23}).
+is_ValueSpec_KeyVal_list_test() -> true = is_ValueSpec([{"key1", 1}, {"key2", true}]).
+is_ValueSpec_Mixed_list_test() -> false = is_ValueSpec([{"key1", 1}, 2, true]).
