@@ -33,20 +33,19 @@ read_error_test() -> {error, not_found} = read(z, new([{"x", [1, 2, 3]}, {"y", [
 
 %% @doc puts new `Value` into `JSON` with `Key`
 write(Key, Value, JSON) -> 
-	if is_KeySpec(Key) andalso is_ValueSpec(Value) ->
-		case JSON of
-			#{Key := _OldValue} -> JSON#{Key := Value};
-			_Other ->  {error, not_found}
-		end;
-		true -> {error, bad_input}.
+	case {is_KeySpec(Key) andalso is_ValueSpec(Value), JSON} of
+		{true, #{Key := _OldValue}} -> JSON#{Key := Value};
+		_Other ->  {error, not_found}
+	end.
 write_ok_test() -> #{"x" := true, "y" := false} = write("y", false, new([{"x", true}, {"y", true}])). 
 write_error_test() -> {error, not_found} = write("z", false, new([{"x", true}, {"y", true}])). 
 
 %% @doc checks that `Value` is string (list of integers)
-is_string([Head|Tail]) when is_integer(Head) -> 
-	is_string_p(Tail, true).
-is_string_p([], true) -> true;
-is_string_p(_Other, _Status) -> false.
+is_string([Head|Tail]) when is_integer(Head) -> is_string(Tail);
+is_string([]) -> true;
+is_string(_Other) -> false.
+is_string_test() -> true = is_string("test").
+is_string_false_test() -> false = is_string(4).
 
 %% @doc checks that `Value` matches the specification `Key = string()`
 is_Key(Value) -> is_string(Value).
