@@ -14,7 +14,7 @@ new_p([], Map) -> Map;
 new_p([{Key, Value}|Tail], Map) -> new_p(Tail, maps:put(Key, Value, Map));
 new_p(_, _) -> {error, bad_input}.
 new_empty_test() -> #{} = new([]).
-new_non_empty_test() -> #{a := "A", b := "B"} = new([{a, "A"}, {b, "B"}]).
+new_non_empty_test() -> #{"a" := "A", "b" := "B"} = new([{"a", "A"}, {"b", "B"}]).
 new_not_list_input_test() -> {error, bad_input} = new(1).
 new_not_tuple_input_test() -> {error, bad_input} = new([1]).
 
@@ -27,8 +27,8 @@ read(Key, JSON) ->
 		end;
 		true -> {error, bad_input}
 	end.
-read_ok_test() -> {ok, [4, 5, 6]} = read(y, new([{x, [1, 2, 3]}, {y, [4, 5, 6]}])).
-read_error_test() -> {error, not_found} = read(z, new([{x, [1, 2, 3]}, {y, [4, 5, 6]}])).
+read_ok_test() -> {ok, [4, 5, 6]} = read("y", new([{"x", [1, 2, 3]}, {"y", [4, 5, 6]}])).
+read_error_test() -> {error, not_found} = read(z, new([{"x", [1, 2, 3]}, {"y", [4, 5, 6]}])).
 
 
 %% @doc puts new `Value` into `JSON` with `Key`
@@ -39,8 +39,8 @@ write(Key, Value, JSON) ->
 			_Other ->  {error, not_found}
 		end;
 		true -> {error, bad_input}.
-write_ok_test() -> #{x := true, y := false} = write(y, false, new([{x, true}, {y, true}])). 
-write_error_test() -> {error, not_found} = write(z, false, new([{x, true}, {y, true}])). 
+write_ok_test() -> #{"x" := true, "y" := false} = write("y", false, new([{"x", true}, {"y", true}])). 
+write_error_test() -> {error, not_found} = write("z", false, new([{"x", true}, {"y", true}])). 
 
 %% @doc checks that `Value` is string (list of integers)
 is_string([Head|Tail]) when is_integer(Head) -> 
