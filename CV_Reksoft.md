@@ -15,7 +15,7 @@ Areas of experience and techniques
 
 - Software development
 - Code review for optimisations and fixes
-- Database administrating
+- Database administration
 
 
 Primary technologies and tools
@@ -39,7 +39,7 @@ Other technologies and tools
 
 
 ### Executive Summary
-5 years in medical information systems development as main Python developer, database maintainer, technical support, PSQL developer.
+5 years in medical information systems development as lead Python developer, database maintainer, technical support, PSQL developer.
 Experience in integration with cash registers, LED-panels. Developing solutions for SOAP data exchanging between MIS database (Medical information system) and state medical web-portals.
 
 
