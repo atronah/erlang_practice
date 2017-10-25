@@ -30,6 +30,7 @@ Other technologies and tools
 ----------------------------
 
 - c++ (Qt)
+- PyQt
 - svn
 - unit-testing
 - linux environment (RedHat, Debian)
@@ -40,7 +41,7 @@ Other technologies and tools
 
 ### Executive Summary
 5 years in medical information systems development as lead Python developer, database maintainer, technical support, PSQL developer.
-Experience in integration with cash registers, LED-panels. Developing solutions for SOAP data exchanging between MIS database (Medical information system) and state medical web-portals.
+Experience in integration with cash registers, LED-panels. Developing solutions for SOAP data exchange between MIS database (Medical information system) and state medical web-portals.
 
 
 ### Education 
