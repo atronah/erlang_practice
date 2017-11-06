@@ -5,6 +5,7 @@
         , evaluate/1
         , print_expression/1
         , compile_instructions/1
+        , evaluate_instructions/1
         ]).
 
 %% @doc gets tokens from passed `String`.
@@ -264,3 +265,34 @@ compile_instructions_test() ->
     , {multiply}
     , {substract}
     ] = compile_instructions("3+5-((~6)*9)").
+
+
+%% @doc evaluate expression represented by instructions sequence for stack-machine with logging each action
+%% usage example:
+%%      calc:evaluate_instructions(calc:compile_instructions("3+2*(8*2-3)+5")).
+evaluate_instructions(Instructions) -> evaluate_instructions_p(Instructions, []).
+evaluate_instructions_p([{push, Value} | Tail], Stack) ->
+    io:format("Push `~B` into stack. Stack: ~w~n", [Value, [Value | Stack]]),
+    evaluate_instructions_p(Tail, [Value | Stack]);
+evaluate_instructions_p([{sign} | Tail], [Operand | Stack]) ->
+    io:format("Sign~n"),
+    io:format("    Pop `~B` from stack as Operand. Stack: ~w~n", [Operand, Stack]),
+    io:format("    Change sign of `~B` and push result (`~B`) into stack. Stack: ~w~n"
+                , [Operand, -Operand, [-Operand | Stack]]),
+    evaluate_instructions_p(Tail, [-Operand | Stack]);
+evaluate_instructions_p([{Operation} | Tail], [SecondOperand, FirstOperand | Stack]) ->
+    {OperationName, OperationSign, OperationResult} =
+        case Operation of
+            add -> {"Add", "+", FirstOperand + SecondOperand};
+            substract -> {"Substract", "-", FirstOperand - SecondOperand};
+            multiply -> {"Multiply", "*", FirstOperand * SecondOperand}
+        end,
+    io:format("~s~n", [OperationName]),
+    io:format("    Pop `~B` from stack as SecondOperand. Stack: ~w~n", [SecondOperand, [FirstOperand | Stack]]),
+    io:format("    Pop `~B` from stack as FirstOperand. Stack: ~w~n", [FirstOperand, Stack]),
+    io:format("    Evaluate `~B ~s ~B`~n", [FirstOperand, OperationSign, SecondOperand]),
+    io:format("    Push result (`~B`) into stack. Stack: ~w~n" , [OperationResult, [OperationResult | Stack]]),
+    evaluate_instructions_p(Tail, [OperationResult | Stack]);
+evaluate_instructions_p([], [StackHead | []]) ->
+    io:format("Finished. Result of evaluating is `~B`~n", [StackHead]),
+    StackHead.
