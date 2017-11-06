@@ -157,15 +157,24 @@ parse_nested_expression_at_the_end_test() ->
                             , {rp, ")"}]).
 
 %% @doc evaluates passed string expression
-evaluate(StringExpression) -> evaluate_p(parse(tokenize(StringExpression))).
-evaluate_p({num, Value}) -> Value;
-evaluate_p({sign, Value}) -> -evaluate_p(Value);
-evaluate_p({Operation, FirstOperand, SecondOperand}) ->
-    case Operation of
-        plus    -> evaluate_p(FirstOperand) + evaluate_p(SecondOperand);
-        minus   -> evaluate_p(FirstOperand) - evaluate_p(SecondOperand);
-        multi   -> evaluate_p(FirstOperand) * evaluate_p(SecondOperand)
-    end.
+evaluate(StringExpression) -> evaluate_p([parse(tokenize(StringExpression))], []).
+evaluate_p([{num, Value} | Tail], Stack) ->
+    evaluate_p(Tail, [Value | Stack]);
+evaluate_p([{UnaryOperation, Operand} | Tail], Stack) ->
+    evaluate_p([Operand | [UnaryOperation | Tail]],  Stack);
+evaluate_p([{Operation, FirstOperand, SecondOperand} | Tail], Stack) ->
+    evaluate_p([FirstOperand | [SecondOperand | [Operation | Tail]]],  Stack);
+evaluate_p([sign | Tail], [Operand | Stack]) ->
+    evaluate_p(Tail, [- Operand | Stack]);
+evaluate_p([Operation | Tail], [SecondOperand,  FirstOperand | Stack]) ->
+    evaluate_p(Tail
+        , [case Operation of
+                minus -> FirstOperand - SecondOperand;
+                plus -> FirstOperand + SecondOperand;
+                multi -> FirstOperand * SecondOperand
+            end
+            | Stack]);
+evaluate_p([], [Head | []]) -> Head.
 % --- tests ---
 evaluate_single_number_test() ->
     4 = evaluate("4").
