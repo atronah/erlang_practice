@@ -4,6 +4,7 @@
         , parse/1
         , evaluate/1
         , print_expression/1
+        , compile_instructions/1
         ]).
 
 %% @doc gets tokens from passed `String`.
@@ -232,3 +233,34 @@ print_expression_test() ->
                         , {multi, {num, 3}, {num, 22}}
                         , {minus, {num, 2}, {sign, {num, 5}}}
                     }).
+
+
+%% @doc compile instructions sequence to evaluate string expression on stack-machine
+compile_instructions(StringExpression) -> compile_instructions_p([parse(tokenize(StringExpression))], []).
+compile_instructions_p([{num, Value} | Tail], Result) ->
+    compile_instructions_p(Tail, [{push, Value} | Result]);
+compile_instructions_p([{UnaryOperation, Operand} | Tail], Result) ->
+    compile_instructions_p([Operand | [UnaryOperation | Tail]],  Result);
+compile_instructions_p([{Operation, FirstOperand, SecondOperand} | Tail], Result) ->
+    compile_instructions_p([FirstOperand | [SecondOperand | [Operation | Tail]]],  Result);
+compile_instructions_p([Operation | Tail], Stack) ->
+    compile_instructions_p(Tail
+        , [{case Operation of
+                sign -> sign;
+                minus -> substract;
+                plus -> add;
+                multi -> multiply
+            end}
+            | Stack]);
+compile_instructions_p([], Stack) -> lists:reverse(Stack).
+% --- tests ---
+compile_instructions_test() ->
+    [{push, 3}
+    , {push, 5}
+    , {add}
+    , {push, 6}
+    , {sign}
+    , {push, 9}
+    , {multiply}
+    , {substract}
+    ] = compile_instructions("3+5-((~6)*9)").
