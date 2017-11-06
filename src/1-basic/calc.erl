@@ -2,7 +2,9 @@
 -include_lib("eunit/include/eunit.hrl").
 -export([tokenize/1
         , parse/1
-        , evaluate/1]).
+        , evaluate/1
+        , print_expression/1
+        ]).
 
 %% @doc gets tokens from passed `String`.
 %% Token represents by tuple `{TokenType, Lexeme}`,
@@ -178,3 +180,46 @@ evaluate_multiplication_test() ->
 evaluate_sign_test() -> -7 = evaluate("~7").
 evaluete_complex_expression_test() ->
     -12 = evaluate("4 - (~8) + (3 * (~6)) - (2 + 4)").
+
+
+%% @doc prints passed expression
+print_expression(Expression) -> lists:reverse(print_expression_p(Expression, [], [])).
+print_expression_p({}, [], Result) -> Result;
+print_expression_p($), Buffer, Result) ->
+    print_expression_p({}, Buffer, [$) | Result]);
+% process numeric values (convert to string representation)
+print_expression_p({num, Value}, Buffer, Result) when is_integer(Value) ->
+    print_expression_p({num, integer_to_list(Value)}, Buffer, Result);
+% move string representation of numeric numeric char-by-char into result
+print_expression_p({num, [Head | Tail]}, Buffer, Result) ->
+    print_expression_p({num, Tail}, Buffer, [Head | Result]);
+% finish processing string representation of numeric values
+print_expression_p({num, []}, Buffer, Result) ->
+    print_expression_p({}, Buffer, Result);
+% process unary operation of expression
+print_expression_p({Operation, Value}, Buffer, Result) ->
+    print_expression_p({Operation, {}, Value}, Buffer, Result);
+% process binary operation of expression
+print_expression_p({Operation, FirstOperand, SecondOperand}, Buffer, Result) ->
+    print_expression_p(FirstOperand, [Operation | [SecondOperand | [$) | Buffer]]], [$( | Result]);
+% process values from buffer
+print_expression_p({}, [Head|Tail], Result) ->
+    print_expression_p(Head, Tail, Result);
+% process operation lexeme
+print_expression_p(Operation, Buffer, Result) ->
+    print_expression_p({}
+                        , Buffer
+                        , [case Operation of
+                                sign -> $~;
+                                minus -> $-;
+                                plus -> $+;
+                                multi -> $*
+                            end
+                            | Result]).
+% --- tests ---
+print_expression_test() ->
+    "((3*22)+(2-(~5)))" =
+    print_expression({plus
+                        , {multi, {num, 3}, {num, 22}}
+                        , {minus, {num, 2}, {sign, {num, 5}}}
+                    }).
