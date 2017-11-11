@@ -277,7 +277,7 @@ parse_p([], [], Expression) -> Expression.
 %% - `wp` - white space (" ")
 %% - `unkwn` for others
 %% and `Lexeme` is value of `Token` in `String`
-tokenize(String) -> lists:reverse(tokenizevaluate_p(String, {}, [])).
+tokenize(String) -> lists:reverse(tokenize_p(String, {}, [])).
 % return result with last Token (with reversed Lexeme) in the head.
 % --- tests ---
 tokenize_test_() ->
@@ -295,44 +295,44 @@ tokenize_test_() ->
         {"unknown token"
             , ?_assertEqual(tokenize("x * 14")
                             , [{unkwn, "x"},
-                                 {wp, " "},
-                                 {multi, "*"},
-                                 {wp, " "},
-                                 {num, "14"}]
+                                {wp, " "},
+                                {multi, "*"},
+                                {wp, " "},
+                                {num, "14"}]
                             )}
     ].
 % --- implementation ---
-tokenizevaluate_p([], {TokenType, Lexeme}, Result) ->
+tokenize_p([], {TokenType, Lexeme}, Result) ->
     [{TokenType, lists:reverse(Lexeme)} | Result];
 % process digit from the input string
-tokenizevaluate_p([Head | Tail], Token, Result)
+tokenize_p([Head | Tail], Token, Result)
   when Head >= $0 andalso Head =< $9 ->
     case Token of
         % add digit to the continuous sequence of digits being processed
-        {num, Lexeme} -> tokenizevaluate_p(Tail, {num, [Head | Lexeme]}, Result);
+        {num, Lexeme} -> tokenize_p(Tail, {num, [Head | Lexeme]}, Result);
         % move previous Token from buffer at the beggining of result
         % and start processing new (numeric) token (put it into buffer)
-        {TokenType, Lexeme} -> tokenizevaluate_p(Tail
+        {TokenType, Lexeme} -> tokenize_p(Tail
                                             , {num, [Head]}
                                             , [{TokenType, lists:reverse(Lexeme)} | Result]);
         % start processing numeric Token
-        _ -> tokenizevaluate_p(Tail, {num, [Head]}, Result)
+        _ -> tokenize_p(Tail, {num, [Head]}, Result)
     end;
 % process non digit char from input string
-tokenizevaluate_p([Head | Tail], Token, Result) ->
+tokenize_p([Head | Tail], Token, Result) ->
     Type = case Head of
                 $( -> lp;
                 $) -> rp;
                 $~ -> sign;
                 $- -> minus;
                 $+ -> plus;
-        $* -> multi;
-        $  -> wp;
+                $* -> multi;
+                $  -> wp;
                 _ -> unkwn
           end,
     case Token of
         % move previous token from buffer at the beggining of result and put current token into buffer
-        {TokenType, Lexeme} -> tokenizevaluate_p(Tail
+        {TokenType, Lexeme} -> tokenize_p(Tail
                                             , {Type, [Head]}
                                             , [{TokenType, lists:reverse(Lexeme)} | Result]);
         % put new token into buffer
