@@ -83,70 +83,100 @@ evaluate_p([], [StackHead | []], Is_Verbose) ->
 %%      - `X - X` -> `0`
 %%      - `X * 0` -> `0`
 %%      - `X * 1` -> `X`
-optimize(Expression) -> optimize_p([Expression], []).
+optimize(Expression) -> optimize(Expression, true).
+optimize(Expression, Is_Repeatable) -> optimize_p([Expression], [], Is_Repeatable, 0).
 % --- tests ---
 optimize_test_() ->
-    {"wide"
-        , ?_assert(optimize({multi
-                            , {minus
-                                , {multi
-                                    , {num, 1}
-                                    , {plus, {num, 3}, {num, 0}}}
-                                , {num, 0}}
-                            , {sign, {num, 0}}}
-                            )
-                    =:= {multi, {num, 3}, {num, 0}})}
-        .
+    [
+        {"sign: `~0`", ?_assertEqual(optimize({sign, {num, 0}}), {num, 0})},
+        {"nothing to optimize: `3 * (4 - (5 + 7))`"
+            , ?_assertEqual(optimize({multi
+                                    , {num, 3}
+                                    , {minus
+                                        , {num, 4}
+                                        , {plus
+                                            , {num, 5}
+                                            , {num, 7}}}})
+                            , {multi
+                                    , {num, 3}
+                                    , {minus
+                                        , {num, 4}
+                                        , {plus
+                                            , {num, 5}
+                                            , {num, 7}}}})},
+        {"complex expression for two-step optimisation: `(1 * (3 + 0)) * (4 - (5 - ~0))`"
+            , ?_assertEqual(optimize({multi
+                                    , {minus
+                                        , {multi
+                                            , {num, 1}
+                                            , {plus, {num, 3}, {num, 0}}}
+                                        , {num, 0}}
+                                    , {minus
+                                        , {num, 4}
+                                        , {minus
+                                            , {num, 5}
+                                            , {sign, {num, 0}}}}
+                                    }
+                                    , true)
+                            , {multi, {num, 3}, {minus, {num, 4}, {num, 5}}}
+                            )}
+    ].
 % --- implementation ---
 % optimize `~0` -> `0`
-optimize_p([{sign, {num, 0}} | Tail], Stack) ->
-    optimize_p(Tail, [{num, 0} | Stack]);
+optimize_p([{sign, {num, 0}} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p(Tail, [{push, 0} | Stack], Is_Repeatable, Counter + 1);
 % optimize `0 + X` -> `X`
-optimize_p([{plus, {num, 0}, Operand} | Tail], Stack) ->
-    optimize_p([Operand | Tail], Stack);
+optimize_p([{plus, {num, 0}, Operand} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Operand | Tail], Stack, Is_Repeatable, Counter + 1);
 % optimize `X + 0` -> `X`
-optimize_p([{plus, Operand, {num, 0}} | Tail], Stack) ->
-    optimize_p([Operand | Tail], Stack);
+optimize_p([{plus, Operand, {num, 0}} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Operand | Tail], Stack, Is_Repeatable, Counter + 1);
 % optimize `X - 0` -> `X`
-optimize_p([{minus, Operand, {num, 0}} | Tail], Stack) ->
-    optimize_p([Operand | Tail], Stack);
+optimize_p([{minus, Operand, {num, 0}} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Operand | Tail], Stack, Is_Repeatable, Counter + 1);
 % optimize `X - X` -> `0`
-optimize_p([{minus, Operand, Operand} | Tail], Stack) ->
-    optimize_p([Tail], [{num, 0} | Stack]);
+optimize_p([{minus, Operand, Operand} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Tail], [{num, 0} | Stack], Is_Repeatable, Counter + 1);
 % optimize `X * 0` -> `0`
-optimize_p([{multi, _Operand, {num, 0}} | Tail], Stack) ->
-    optimize_p([Tail], [{num, 0} | Stack]);
+optimize_p([{multi, _Operand, {num, 0}} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Tail], [{num, 0} | Stack], Is_Repeatable, Counter + 1);
 % optimize `0 * X` -> `0`
-optimize_p([{multi, {num, 0}, _Operand} | Tail], Stack) ->
-    optimize_p([Tail], [{num, 0} | Stack]);
+optimize_p([{multi, {num, 0}, _Operand} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Tail], [{num, 0} | Stack], Is_Repeatable, Counter + 1);
 % optimize `X * 1` -> `X`
-optimize_p([{multi, Operand, {num, 1}} | Tail], Stack) ->
-    optimize_p([Operand | Tail], Stack);
+optimize_p([{multi, Operand, {num, 1}} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Operand | Tail], Stack, Is_Repeatable, Counter + 1);
 % optimize `1 * X` -> `X`
-optimize_p([{multi, {num, 1}, Operand} | Tail], Stack) ->
-    optimize_p([Operand | Tail], Stack);
+optimize_p([{multi, {num, 1}, Operand} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p([Operand | Tail], Stack, Is_Repeatable, Counter + 1);
 % skip optimization for simple number
-optimize_p([{num, Value} | Tail], Stack) ->
-    optimize_p(Tail, [{num, Value} | Stack]);
+optimize_p([{num, Value} | Tail], Stack, Is_Repeatable, Counter) ->
+    optimize_p(Tail, [{push, Value} | Stack], Is_Repeatable, Counter);
 % skip optimisation for other unary operations
-optimize_p([{Operation, Operand} | Tail], Stack) ->
-    optimize_p([Operand | Tail], [Operation | Stack]);
-% skip optimize for others binary operations
-optimize_p([{Operation, FirstOperand, SecondOperand} | Tail], Stack) ->
-    optimize_p([SecondOperand, FirstOperand | Tail], [Operation | Stack]);
-% return optimized Expression if it is last item in Stack
-optimize_p([], [Expression | []]) -> Expression;
-% transform stack representation to expression back
-%   for unary operations
-optimize_p([], [Operand, Operation | Tail])
-    when Operation =:= sign ->
-    optimize_p([], [{Operation, Operand} | Tail]);
-optimize_p([], [FirstOperand, SecondOperand, Operation | Tail])
-    when Operation =:= plus
-        orelse Operation =:= minus
-        orelse Operation =:= multi
-    ->
-    optimize_p([], [{Operation, FirstOperand, SecondOperand} | Tail]).
+optimize_p([{Operation, Operand} | Tail], Stack, Is_Repeatable, Counter) ->
+    Instruction = case Operation of
+                    sign -> sign
+                end,
+    optimize_p([Operand | Tail], [{Instruction} | Stack], Is_Repeatable, Counter);
+% skip optimize for others binary operations and transform operation to instruction
+optimize_p([{Operation, FirstOperand, SecondOperand} | Tail], Stack, Is_Repeatable, Counter) ->
+    Instruction = case Operation of
+                    minus -> substract;
+                    plus -> add;
+                    multi -> multiply
+                end,
+    optimize_p([SecondOperand, FirstOperand | Tail], [{Instruction} | Stack], Is_Repeatable, Counter);
+% transform Stack to Expression and return
+optimize_p([], Stack, Is_Repeatable, Counter) ->
+    Expression = decompile_instructions(Stack),
+    case {Is_Repeatable, Counter} of
+        % for non-repeateable optimisation returns first loop result
+        {false, _Counter} -> Expression;
+        % for repeateable optimisation returns result only if there were no optimisations in last loop
+        {true, 0} -> Expression;
+        % for repeateable optimisation run next loop if there were optimisation in last loop
+        _Otherwise -> optimize_p([Expression], [], Is_Repeatable, 0)
+    end.
 % -----------------------------------------------------------------------------
 
 
@@ -390,4 +420,36 @@ print_expression_p(Operation, Buffer, Result) ->
                                 multi -> $*
                             end
                             | Result]).
+% -----------------------------------------------------------------------------
 
+
+%% @doc decompile instructions sequence to abstract syntax tree
+decompile_instructions(Instructions) -> decompile_instructions_p(Instructions, []).
+% --- tests ---
+decompile_instructions_test_() ->
+    {"right-aligned nested expression: `3 * (4 - (5 + 6))` represented as `3456+-*`"
+        , ?_assertEqual(decompile_instructions([
+                                                {push, 3},
+                                                {push, 4},
+                                                {push, 5},
+                                                {push, 6},
+                                                {add},
+                                                {substract},
+                                                {multiply}
+                                            ])
+                        , {multi, {num, 3}, {minus, {num, 4}, {plus, {num, 5}, {num, 6}}}}
+                        )}.
+% --- implementation ---
+decompile_instructions_p([], [StackHead | []]) -> StackHead;
+decompile_instructions_p([{push, Value} | Tail], Stack) ->
+    decompile_instructions_p(Tail, [{num, Value} | Stack]);
+decompile_instructions_p([{sign} | Tail], [FirstOperand | Stack]) ->
+    decompile_instructions_p(Tail, [{sign, FirstOperand} | Stack]);
+decompile_instructions_p([{Instruction} | Tail], [SecondOperand, FirstOperand | Stack]) ->
+    Operation = case Instruction of
+                        add -> plus;
+                        substract -> minus;
+                        multiply -> multi
+                    end,
+    decompile_instructions_p(Tail, [{Operation, FirstOperand, SecondOperand} | Stack]).
+% -----------------------------------------------------------------------------
