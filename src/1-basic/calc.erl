@@ -20,13 +20,13 @@ evaluate(StringExpression, Is_Verbose) -> evaluate_p(compile_instructions(String
 % -- tests ---
 evaluate_test_() ->
     [
-        {"single number", ?_assert(evaluate("4") =:= 4)},
-        {"single number in parentheses", ?_assert(evaluate("(((12)))") =:= 12)},
-        {"minus operation", ?_assert(evaluate("50 - 13") =:= 37)},
-        {"plus operation", ?_assert(evaluate("5 + 13") =:= 18)},
-        {"multiplication operation", ?_assert(evaluate("33 * 3") =:= 99)},
-        {"sign operation", ?_assert(evaluate("~7") =:= -7)},
-        {"complex expression", ?_assert(evaluate("4 - (~8) + (3 * (~6)) - (2 + 4)") =:= -12)}
+        {"single number", ?_assertEqual(evaluate("4"), 4)},
+        {"single number in parentheses", ?_assertEqual(evaluate("(((12)))"), 12)},
+        {"minus operation", ?_assertEqual(evaluate("50 - 13"), 37)},
+        {"plus operation", ?_assertEqual(evaluate("5 + 13"), 18)},
+        {"multiplication operation", ?_assertEqual(evaluate("33 * 3"), 99)},
+        {"sign operation", ?_assertEqual(evaluate("~7"), -7)},
+        {"complex expression", ?_assertEqual(evaluate("4 - (~8) + (3 * (~6)) - (2 + 4)"), -12)}
     ].
 % --- implementation ---
 evaluate_p([{push, Value} | Tail], Stack, Is_Verbose) ->
@@ -156,38 +156,38 @@ parse(TokenList) -> parse_p(TokenList, [], []).
 parse_test_() ->
     [
         {"sinlge number: `4` = `4`"
-            , ?_assert(parse([{num, "4"}]) =:= {num, 4})},
+            , ?_assertEqual(parse([{num, "4"}]), {num, 4})},
         {"single number in parentheses: `((7)) = 7`"
-            , ?_assert(parse([{lp, "("}, {lp, "("}, {num, "7"}, {rp, ")"}, {rp, ")"}])
-                        =:= {num, 7})},
+            , ?_assertEqual(parse([{lp, "("}, {lp, "("}, {num, "7"}, {rp, ")"}, {rp, ")"}])
+                            , {num, 7})},
         {"one operation: `2 + 5`"
-            , ?_assert(parse([{num, "2"}, {plus, "+"}, {num, "5"}])
-                        =:= {plus, {num, 2}, {num, 5}})},
+            , ?_assertEqual(parse([{num, "2"}, {plus, "+"}, {num, "5"}])
+                            , {plus, {num, 2}, {num, 5}})},
         {"two operations: `2 + 5 - 9`"
-            , ?_assert(parse([{num, "2"}, {plus, "+"}, {num, "5"}, {minus, "-"}, {num, "9"}])
-                        =:= {minus
+            , ?_assertEqual(parse([{num, "2"}, {plus, "+"}, {num, "5"}, {minus, "-"}, {num, "9"}])
+                            , {minus
                                     , {plus
                                         , {num, 2}
                                         , {num, 5}}
                                     , {num, 9}
                                 })},
         {"nested subexpression at the beginning: `~(2 + 5) - 9`"
-            , ?_assert(parse([{sign, "~"}, {lp, "("}
+            , ?_assertEqual(parse([{sign, "~"}, {lp, "("}
                                                 , {num, "2"}, {plus, "+"}, {num, "5"}
                                             , {rp, ")"}
                                 , {minus, "-"}, {num, "9"}])
-                        =:= {minus
+                            , {minus
                                 , {sign, {plus
                                             , {num, 2}
                                             , {num, 5}}}
                                 , {num, 9}
                             })},
         {"nested subexpression at the end: `3 * 22 + (2 - 5)`"
-            , ?_assert(parse([ {num, "3"}, {multi, "*"}, {num, "22"}
+            , ?_assertEqual(parse([ {num, "3"}, {multi, "*"}, {num, "22"}
                                 , {plus, "+"}, {lp, "("}
                                                     , {num, "2"}, {minus, "-"}, {num, "5"}
                                                 , {rp, ")"}])
-                        =:= {plus
+                            , {plus
                                 , {multi
                                     , {num, 3}
                                     , {num, 22}}
@@ -253,25 +253,23 @@ tokenize(String) -> lists:reverse(tokenizevaluate_p(String, {}, [])).
 tokenize_test_() ->
     [
         {"single number"
-            , ?_assert(tokenize("189") =:= [{num, "189"}])},
+            , ?_assertEqual(tokenize("189"), [{num, "189"}])},
         {"nested expression"
-            , ?_assert(tokenize("((2+3)-4)")
-                        =:= [{lp, "("}
-                                , {lp, "("}
-                                    , {num, "2"}, {plus, "+"}, {num, "3"}
+            , ?_assertEqual(tokenize("((2+3)-4)")
+                            , [{lp, "("}
+                                    , {lp, "("}, {num, "2"}, {plus, "+"}, {num, "3"}, {rp, ")"}
+                                    , {minus, "-"}, {num, "4"}
                                 , {rp, ")"}
-                                , {minus, "-"}, {num, "4"}
-                            , {rp, ")"}
                             ]
                         )},
         {"unknown token"
-            , ?_assert(tokenize("x * 14")
-                        =:= [{unkwn, "x"},
-                             {wp, " "},
-                             {multi, "*"},
-                             {wp, " "},
-                             {num, "14"}]
-                        )}
+            , ?_assertEqual(tokenize("x * 14")
+                            , [{unkwn, "x"},
+                                 {wp, " "},
+                                 {multi, "*"},
+                                 {wp, " "},
+                                 {num, "14"}]
+                            )}
     ].
 % --- implementation ---
 tokenizevaluate_p([], {TokenType, Lexeme}, Result) ->
@@ -318,9 +316,8 @@ compile_instructions(StringExpression) -> compile_instructions_p([parse(tokenize
 % --- tests ---
 compile_instructions_test_() ->
     {"wide"
-        , ?_assert(compile_instructions("3+5-((~6)*9)")
-                    =:=[
-                            {push, 3},
+        , ?_assertEqual(compile_instructions("3+5-((~6)*9)")
+                        , [ {push, 3},
                             {push, 5},
                             {add},
                             {push, 6},
@@ -328,7 +325,7 @@ compile_instructions_test_() ->
                             {push, 9},
                             {multiply},
                             {substract}
-                        ])}.
+                            ])}.
 % --- implementation ---
 compile_instructions_p([{num, Value} | Tail], Result) ->
     compile_instructions_p(Tail, [{push, Value} | Result]);
@@ -354,11 +351,11 @@ print_expression(Expression) -> lists:reverse(print_expression_p(Expression, [],
 % --- tests ---
 print_expression_test_() ->
     {"wide"
-        , ?_assert(print_expression({plus
-                                    , {multi, {num, 3}, {num, 22}}
-                                    , {minus, {num, 2}, {sign, {num, 5}}}
-                                    })
-                    =:= "((3*22)+(2-(~5)))"
+        , ?_assertEqual(print_expression({plus
+                                        , {multi, {num, 3}, {num, 22}}
+                                        , {minus, {num, 2}, {sign, {num, 5}}}
+                                        })
+                        , "((3*22)+(2-(~5)))"
                 )}.
 % --- implementation ---
 print_expression_p({}, [], Result) -> Result;
