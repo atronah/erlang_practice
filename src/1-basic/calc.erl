@@ -6,6 +6,7 @@
         , evaluate/2
         , print_expression/1
         , compile_instructions/1
+        , optimize/1
         ]).
 
 %% @doc gets tokens from passed `String`.
@@ -157,6 +158,79 @@ parse_nested_expression_at_the_end_test() ->
             , {plus, "+"}, {lp, "("}
                                 , {num, "2"}, {minus, "-"}, {num, "5"}
                             , {rp, ")"}]).
+
+
+%% @doc optimize absract syntax tree.
+%% supported optimisation:
+%%      - `~0`    -> `0`
+%%      - `X + 0` -> `X`
+%%      - `X - 0` -> `X`
+%%      - `X - X` -> `0`
+%%      - `X * 0` -> `0`
+%%      - `X * 1` -> `X`
+optimize(Expression) -> optimize_p([Expression], []).
+% optimize `~0` -> `0`
+optimize_p([{sign, {num, 0}} | Tail], Stack) ->
+    optimize_p(Tail, [{num, 0} | Stack]);
+% optimize `0 + X` -> `X`
+optimize_p([{plus, {num, 0}, Operand} | Tail], Stack) ->
+    optimize_p([Operand | Tail], Stack);
+% optimize `X + 0` -> `X`
+optimize_p([{plus, Operand, {num, 0}} | Tail], Stack) ->
+    optimize_p([Operand | Tail], Stack);
+% optimize `X - 0` -> `X`
+optimize_p([{minus, Operand, {num, 0}} | Tail], Stack) ->
+    optimize_p([Operand | Tail], Stack);
+% optimize `X - X` -> `0`
+optimize_p([{minus, Operand, Operand} | Tail], Stack) ->
+    optimize_p([Tail], [{num, 0} | Stack]);
+% optimize `X * 0` -> `0`
+optimize_p([{multi, _Operand, {num, 0}} | Tail], Stack) ->
+    optimize_p([Tail], [{num, 0} | Stack]);
+% optimize `0 * X` -> `0`
+optimize_p([{multi, {num, 0}, _Operand} | Tail], Stack) ->
+    optimize_p([Tail], [{num, 0} | Stack]);
+% optimize `X * 1` -> `X`
+optimize_p([{multi, Operand, {num, 1}} | Tail], Stack) ->
+    optimize_p([Operand | Tail], Stack);
+% optimize `1 * X` -> `X`
+optimize_p([{multi, {num, 1}, Operand} | Tail], Stack) ->
+    optimize_p([Operand | Tail], Stack);
+% skip optimization for simple number
+optimize_p([{num, Value} | Tail], Stack) ->
+    optimize_p(Tail, [{num, Value} | Stack]);
+% skip optimisation for other unary operations
+optimize_p([{Operation, Operand} | Tail], Stack) ->
+    optimize_p([Operand | Tail], [Operation | Stack]);
+% skip optimize for others binary operations
+optimize_p([{Operation, FirstOperand, SecondOperand} | Tail], Stack) ->
+    optimize_p([SecondOperand, FirstOperand | Tail], [Operation | Stack]);
+% return optimized Expression if it is last item in Stack
+optimize_p([], [Expression | []]) -> Expression;
+% transform stack representation to expression back
+%   for unary operations
+optimize_p([], [Operand, Operation | Tail])
+    when Operation =:= sign ->
+    optimize_p([], [{Operation, Operand} | Tail]);
+optimize_p([], [FirstOperand, SecondOperand, Operation | Tail])
+    when Operation =:= plus
+        orelse Operation =:= minus
+        orelse Operation =:= multi
+    ->
+    optimize_p([], [{Operation, FirstOperand, SecondOperand} | Tail]).
+optimize_test() ->
+    {multi, {num, 3}, {num, 0}} =
+    optimize(
+        {multi
+            , {minus
+                , {multi
+                    , {num, 1}
+                    , {plus, {num, 3}, {num, 0}}}
+                , {num, 0}}
+            , {sign, {num, 0}}
+        }
+    ).
+
 
 %% @doc evaluate string expression using stack-machine (with logging each action is Is_Verbose passes as true)
 %% @param StringExpression - expression for evaluating
